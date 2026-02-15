@@ -520,23 +520,24 @@ async def login_worker(uid, pw, index, semaphore):
 async def perform_full_login():
     global active_clients, is_restarting
     is_restarting = True
-    # Log out existing if any
+    # Thoát toàn bộ acc hiện tại SONG SONG để nhanh nhất
     if active_clients:
-        print("🔄 [REFRESH] Logging out existing accounts...")
-        for client in active_clients:
+        print("🔄 [REFRESH] Parallel logout of existing accounts...")
+        async def safe_abort(c):
             try:
-                client.running = False
-                await client.force_abort()
+                c.running = False
+                await c.force_abort()
             except: pass
+        await asyncio.gather(*(safe_abort(client) for client in active_clients))
     
     active_clients = []
     accounts = await load_accounts()
     print(f"📂 [SYSTEM] Starting Login for {len(accounts)} accounts...")
     
-    # Tăng kịch sàn lên 100 parallel workers để treo Render mượt nhất
-    semaphore = asyncio.Semaphore(100) 
-    for i in range(0, len(accounts), 100):
-        batch = accounts[i:i+100]
+    # Dùng 50-60 parallel workers (Mức ổn định và mạnh nhất trên Render)
+    semaphore = asyncio.Semaphore(50) 
+    for i in range(0, len(accounts), 50):
+        batch = accounts[i:i+50]
         tasks = [login_worker(uid, pw, idx, semaphore) for uid, pw, idx in batch]
         results = await asyncio.gather(*tasks)
         active_clients.extend([c for c in results if c is not None])
@@ -576,4 +577,3 @@ if __name__ == '__main__':
         asyncio.run(main())
     except KeyboardInterrupt:
         pass
-
