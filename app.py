@@ -8,11 +8,8 @@ from google.protobuf.timestamp_pb2 import Timestamp
 from concurrent.futures import ThreadPoolExecutor
 from threading import Thread
 from Pb2 import DEcwHisPErMsG_pb2 , MajoRLoGinrEs_pb2 , PorTs_pb2 , MajoRLoGinrEq_pb2 , sQ_pb2 , Team_msg_pb2
-from cfonts import time, os, json, asyncio, hashlib, random
 from aiohttp import web
-import signal
-import sys
-import random
+import signal, sys, random, asyncio, hashlib
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 
@@ -425,6 +422,10 @@ async def SpamManager():
 
 
 
+async def handle_index(request):
+    """Health Check cho UptimeRobot"""
+    return web.json_response({"status": "live", "message": "QDZ Bot is running"})
+
 # API Handlers
 async def handle_stop(request):
     global target_team_code, active_clients, is_restarting
@@ -475,6 +476,7 @@ async def handle_teamcode(request):
 
 async def start_api_server():
     app = web.Application()
+    app.router.add_get('/', handle_index) # Cổng cho UptimeRobot
     app.router.add_get('/qdz/stop', handle_stop)
     app.router.add_get('/qdz/teamcode={teamcode}', handle_teamcode)
     app.router.add_get('/qdz', handle_teamcode)
